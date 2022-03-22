@@ -78,6 +78,18 @@
     // --------------------------------------------------------------
     //
     // test if a specific row on this board contains a conflict
+    // I: row index of our chess board (based on zero index)
+    // O: boolean whether there is a conflict for the particular row index
+    // false - no row conflict
+    // true - row conflict exists
+    // E: no chess piece on that row
+    // C: only number 0 to n of rows in chess board
+    // Strategy: if there are only 1 rook then no row conflict,
+    // if there are 2 rooks then there is a conflict
+    //
+    // Psuedo:
+    // board.get(rowIndex) returns entire row of chess board
+    // board.set(rowIndex, [0, 0, 1, 0]) sets the row, takes new row as second input
     hasRowConflictAt: function(rowIndex) {
       return false; // fixme
     },

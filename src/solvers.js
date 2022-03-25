@@ -18,8 +18,8 @@ O; nxn matrix chess board representing a valid solution for placed rooks that ca
 E:
 C: n needs to be positive iteger
 Strategy:
-  1. create an empty board with n number of rows and columns (with helper function)
-  2. pass the empty board into the Board function so it gets all the methods
+  1. create an empty board by reusing the makeEmptyMatrix function with n number of rows and columns
+  2.
   3. create a tree with the empty board
   4. create children of the empty board with rooks placed in every possible location
     a: while creating children, check for:
@@ -50,18 +50,9 @@ window.findNRooksSolution = function(n) {
   // otherwise, put a 1 in the location, and push entire array to a children's array.
   // iterate through n columns
   // next row
-  var childrensArray = [];
-  var possibleSolutions = function (board) {
-    for (var row = 0; row < n; row++) {
-      for (var col = 0; col < n; col++) {
-        board.attributes[row][col];
-      }
-    }
 
-  };
   // BC: isValidSolution === true, n === pieces, there is a conflict
   // RC: there are no conflicts, is valid solution === false, pieces < n
-
 
   var solution = board; //fixme
 
@@ -108,5 +99,37 @@ window.Tree = function(inputBoard, n, pieces) {
 
 window.Tree.prototype.addChild = function(matrix) {
   var newChild = window.Tree(matrix);
-}
+};
 
+var board = new Board({n: 4});
+var n = 4;
+var childrensArray = [];
+
+var makeEmptyMatrix = function(n) {
+  return _(_.range(n)).map(function() {
+    return _(_.range(n)).map(function() {
+      return 0;
+    });
+  });
+};
+
+var matrix = makeEmptyMatrix(4);
+
+
+var possibleSolutions = function (board) {
+  // var inputBoardMatrix = [];
+  // for (var nrows = 0; nrows < board.attributes.n; nrows++) {
+  //   inputBoardMatrix.push(board.attributes[nrows]);
+  // }
+  for (var row = 0; row < n; row++) {
+    for (var col = 0; col < n; col++) {
+      if (board[row][col] === 0) {
+        var childBoard = JSON.parse(JSON.stringify(board));
+        childBoard[row][col] = 1;
+        childrensArray.push(childBoard);
+      }
+    }
+  }
+};
+
+possibleSolutions(matrix);

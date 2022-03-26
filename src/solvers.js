@@ -19,45 +19,73 @@ E:
 C: n needs to be positive iteger
 Strategy:
   1. create an empty board by reusing the makeEmptyMatrix function with n number of rows and columns
-  2.
-  3. create a tree with the empty board
-  4. create children of the empty board with rooks placed in every possible location
-    a: while creating children, check for:
-      aa: check for conflicts
-      ab: set true/false for isValidSolution
-      ac: check if number of rooks placed equals to n
-    b: if there are conflicts, stop creating children
-    c: if isValidSolution is false, and number of rooks is less than n, try to create more children
-  5. once entire tree has been traversed, go into the tree and find all isValidSolution boards
-  6. put solution board in an array
-  7. remove duplicate solutions
-  8. return first valid solution, and return n number of element in solutions array
+  2. create a tree with the empty board
+  3. create children of the empty board with rooks placed in every possible location without conflict
+  5. if number of pieces is less than n, create more children for any validsolution children, recursively
+  6. when pieces equals n stop creating more children
+  7. Traverse the trees and select out all the boards that have pieces = n and are valid solutions and put in sol array
+  8. for findNRooksSolution, return first board
+  9. for countNRooksSolutions, return length of sol array
 
 Psuedo:
+// function(board)
+// set a "1" starting from first row first column
+// iterate through n columns
+// once we reach n columns, iterate through next row
+// try to put a 1 in the current location. If there is already a 1, skip,
+// otherwise, put a 1 in the location, and push entire array to a children's array.
+// iterate through n columns
+// next row
+
 */
 
+// getSolution: traverse the solutionTree for complete solutions
+//
 
 window.findNRooksSolution = function(n) {
-  var board = new Board(makeEmptyBoard(n));
-  var pieces = 0;
-  var solutionTree = new Tree(board, n, pieces);
+  var matrix = makeEmptyMatrix(n);
+  // var matrix = [
+  //   [0, 0, 1, 0],
+  //   [0, 0, 0, 0],
+  //   [0, 0, 0, 0],
+  //   [0, 0, 0, 0]
+  // ];
+  var solutionTree = new Tree(matrix, n);
 
-  // function(board)
-  // set a "1" starting from first row first column
-  // iterate through n columns
-  // once we reach n columns, iterate through next row
-  // try to put a 1 in the current location. If there is already a 1, skip,
-  // otherwise, put a 1 in the location, and push entire array to a children's array.
-  // iterate through n columns
-  // next row
+  var findAllSolutions = function (tree) {
+    tree.possibleSolutions('rook');
+    if (tree.pieces === tree.n - 1) {
+      return;
+    } else {
+      for (var i = 0; i < tree.children.length; i++) {
+        if (tree.children[i].n !== this.pieces) {
+          findAllSolutions(tree.children[i]);
+        }
+      }
+    }
+  };
+  findAllSolutions(solutionTree);
 
-  // BC: isValidSolution === true, n === pieces, there is a conflict
-  // RC: there are no conflicts, is valid solution === false, pieces < n
+  return solutionTree;
+  // var solutionsSet = new Set();
+  // var grabAllSolution = function (board) {
+  //   if (board.n === board.pieces) {
+  //     var solBoard = JSON.stringify(board.board);
+  //     solutionsSet.add(solBoard);
+  //   }
+  //   if (board.children.length > 0) {
+  //     for (var i = 0; i < board.children.length; i++) {
+  //       grabAllSolution(board.children[i]);
+  //     }
+  //   }
+  // };
 
-  var solution = board; //fixme
+  // grabAllSolution(solutionTree);
+  // var allSolutionSet = Array.from(solutionsSet);
+  // var solution = JSON.parse(allSolutionSet[0]);
 
-  console.log('Single solution for ' + n + ' rooks:', JSON.stringify(solution));
-  return solution;
+  // console.log('Single solution for ' + n + ' rooks:', JSON.stringify(solution));
+  // return solution;
 };
 
 // return the number of nxn chessboards that exist, with n rooks placed such that none of them can attack each other
@@ -84,28 +112,50 @@ window.countNQueensSolutions = function(n) {
   return solutionCount;
 };
 
-window.makeEmptyBoard = function(n) {
-  var matrix = Array(n).fill(Array(n).fill(0));
-  return matrix;
-};
-
-window.Tree = function(inputBoard, n, pieces) {
+window.Tree = function(inputBoard, n) {
   this.board = inputBoard;
   this.n = n;
-  this.pieces = 0;
-  this.isValidSolution = false;
   this.children = [];
+  this.countPieces();
 };
 
-window.Tree.prototype.addChild = function(matrix) {
-  var newChild = window.Tree(matrix);
+window.Tree.prototype.countPieces = function() {
+  var pieces = _.reduce(this.board, function(memo, row) {
+    return memo + _.reduce(row, function(memo, col) {
+      return memo + col;
+    }, 0);
+  }, 0);
+  this.pieces = pieces;
 };
 
-var board = new Board({n: 4});
-var n = 4;
-var childrensArray = [];
+window.Tree.prototype.possibleSolutions = function (rookOrQueen) {
+  for (var row = 0; row < this.n; row++) {
+    for (var col = 0; col < this.n; col++) {
+      if (this.board[row][col] === 0) {
+        var childBoard = JSON.parse(JSON.stringify(this.board));
+        childBoard[row][col] = 1;
+        var newChild = new Tree(childBoard, this.n);
+        var newChildBoard = new Board(childBoard);
+        if (rookOrQueen === 'rook' && !newChildBoard.hasAnyRooksConflicts()) {
+          this.children.push(newChild);
+        } else if (rookOrQueen === 'queen' && !newChildBoard.hasAnyQueensConflicts()) {
+          this.children.push(newChild);
+        }
+      }
+    }
+  }
+};
 
-var makeEmptyMatrix = function(n) {
+// window.Tree.prototype.map = function (mapFunc) {
+//   mapFunc(this);
+//   if (this.children.length > 0) {
+//     this.children.forEach(function(child) {
+//       child.map(mapFunc);
+//     });
+//   }
+// };
+
+window.makeEmptyMatrix = function(n) {
   return _(_.range(n)).map(function() {
     return _(_.range(n)).map(function() {
       return 0;
@@ -113,23 +163,20 @@ var makeEmptyMatrix = function(n) {
   });
 };
 
-var matrix = makeEmptyMatrix(4);
+//var test = makeEmptyMatrix(4);
+// var test = [
+//   [0, 0, 1, 0],
+//   [0, 0, 0, 0],
+//   [0, 0, 0, 0],
+//   [0, 0, 0, 0]
+// ];
+// var testTree = new Tree(test, 4);
+// testTree.possibleSolutions();
 
+var test = findNRooksSolution(4);
 
-var possibleSolutions = function (board) {
-  // var inputBoardMatrix = [];
-  // for (var nrows = 0; nrows < board.attributes.n; nrows++) {
-  //   inputBoardMatrix.push(board.attributes[nrows]);
-  // }
-  for (var row = 0; row < n; row++) {
-    for (var col = 0; col < n; col++) {
-      if (board[row][col] === 0) {
-        var childBoard = JSON.parse(JSON.stringify(board));
-        childBoard[row][col] = 1;
-        childrensArray.push(childBoard);
-      }
-    }
-  }
-};
+// var myfunc = function () {
+//   board.push([100]);
+// };
 
-possibleSolutions(matrix);
+// test.map(myfunc);

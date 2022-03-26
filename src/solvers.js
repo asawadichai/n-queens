@@ -57,45 +57,11 @@ window.reducePossibleAddress = function(allSpacesList, row, col) {
 
 window.findNRooksSolution = function(n) {
   var matrix = makeEmptyMatrix(n);
-  // var matrix = [
-  //   [0, 0, 1, 0],
-  //   [0, 0, 0, 0],
-  //   [0, 0, 0, 0],
-  //   [0, 0, 0, 0]
-  // ];
+
   var solutionTree = new Tree(matrix, n);
-  /* // create address of all spaces
-  var allSpacesList = spaceAddress(n);
-  // clone the empty matrix
-  var firstSpaceMatrix = JSON.parse(JSON.stringify(matrix));
-  // create first child matrix with piece at first space
-  firstSpaceMatrix[0][0] = 1;
-  // create first child tree
-  var firstSpaceTree = new Tree(firstSpaceMatrix, n);
-  // add first child tree to solutionTree
-  solutionTree.children.push(firstSpaceTree);
-  // delete first space from allspaceslist
-  allSpacesList.shift();
-  // loop through all spaces list
-  for (var i = 0; i < allSpacesList.length; i++) {
-    // for every space list, try to add to the matrix
-
-    // if that new matrix results in conflict
-    // add that space into the firstchildren list
-
-    // if there is no conflict,
-
-    // add that space to the valid spaces list (for first child tree)
-  }
-
-  // we would create new valid spaces list for the rest of the other first children
-
-  // loop through all children, creating valid children using their valid spaces list
- */
-
 
   var findAllSolutions = function (tree) {
-    tree.possibleSolutions('rook');
+    tree.possibleSolutions('rook', tree.row);
     if (tree.pieces === tree.n - 1) {
       return;
     } else {
@@ -151,19 +117,15 @@ window.countNRooksSolutions = function(n) {
 
 // return a matrix (an array of arrays) representing a single nxn chessboard, with n queens placed such that none of them can attack each other
 window.findNQueensSolution = function(n) {
-  if (n === 0) {
-    return [];
-  }
   var matrix = makeEmptyMatrix(n);
-  // var matrix = [
-  //   [0, 0, 0, 0],
-  //   [0, 0, 0, 0],
-  //   [0, 0, 0, 0],
-  //   [0, 0, 0, 0]
-  // ];
+  if (n === 0 || n === 2 || n === 3) {
+    return matrix;
+  }
+
   var solutionTree = new Tree(matrix, n);
+
   var findAllSolutions = function (tree) {
-    tree.possibleSolutions('queen');
+    tree.possibleSolutions('queen', tree.row);
     if (tree.pieces === tree.n - 1) {
       return;
     } else {
@@ -174,6 +136,8 @@ window.findNQueensSolution = function(n) {
       }
     }
   };
+
+  findAllSolutions(solutionTree);
 
   var solutionsSet = new Set();
   var grabAllSolution = function (board) {
@@ -187,15 +151,6 @@ window.findNQueensSolution = function(n) {
       }
     }
   };
-
-  while (solutionsSet.size === 0) {
-    var secondChild = JSON.parse(JSON.stringify(matrix));
-    secondChild[0][j] = 1;
-    var secondChildTree = new Tree(secondChild, n);
-    solutionTree.children.push(secondChildTree);
-    findAllSolutions(solutionTree.children[j]);
-  }
-
 
   grabAllSolution(solutionTree);
   var allSolutionSet = Array.from(solutionsSet);
@@ -213,19 +168,17 @@ window.countNQueensSolutions = function(n) {
 
   var generateSolutions = function (row) {
     if (row === n) {
-      solutionCount++;
-      return;
+      return solutionCount++;
     }
     for (var col = 0; col < n; col++) {
       board.togglePiece(row, col);
       if (!board.hasAnyQueensConflicts()) {
-        generateSolutions(row++);
+        generateSolutions(row + 1);
       }
       board.togglePiece(row, col);
     }
   };
   generateSolutions(0);
-
 
   console.log('Number of solutions for ' + n + ' queens:', solutionCount);
   return solutionCount;
@@ -236,6 +189,7 @@ window.Tree = function(inputBoard, n) {
   this.n = n;
   this.children = [];
   this.countPieces();
+  this.row = 0;
 };
 
 window.Tree.prototype.countPieces = function() {
@@ -276,21 +230,27 @@ window.Tree.prototype.countPieces = function() {
 //   }
 // };
 
-// THIS ONE ONLY DOES 1 SOLUTION AND MOVES ON
-window.Tree.prototype.possibleSolutions = function (rookOrQueen) {
-  for (var row = 0; row < this.n; row++) {
+// Skips rows after they have been placed
+window.Tree.prototype.possibleSolutions = function (rookOrQueen, rowcount) {
+  var row = rowcount;
+  for (; row < this.n; row++) {
     for (var col = 0; col < this.n; col++) {
       if (this.board[row][col] === 0) {
         var childBoard = JSON.parse(JSON.stringify(this.board));
         childBoard[row][col] = 1;
         var newChild = new Tree(childBoard, this.n);
+        newChild.row = row + 1;
         var newChildBoard = new Board(childBoard);
         if (rookOrQueen === 'rook' && !newChildBoard.hasAnyRooksConflicts()) {
           this.children.push(newChild);
-          return;
+          if (newChild.pieces === this.n) {
+            return;
+          }
         } else if (rookOrQueen === 'queen' && !newChildBoard.hasAnyQueensConflicts()) {
           this.children.push(newChild);
-          return;
+          if (newChild.pieces === this.n) {
+            return;
+          }
         }
       }
     }
